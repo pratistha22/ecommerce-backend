@@ -78,5 +78,15 @@ app.patch("/api/orders/:id", async (req, res) => {
   }
 });
 
+// Delete an order
+app.delete("/api/orders/:id", async (req, res) => {
+  try {
+    await Order.findByIdAndDelete(req.params.id);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to delete order" });
+  }
+});
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
