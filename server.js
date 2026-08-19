@@ -4,6 +4,7 @@ const cors = require("cors");
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const crypto = require("crypto");
 
 const app = express();
 app.use(cors());
@@ -44,6 +45,30 @@ app.post("/api/login", (req, res) => {
 });
 
 // Create a new order (called at checkout)
+// Prepare eSewa payment data
+app.post("/api/esewa/initiate", (req, res) => {
+  const { amount, transactionId } = req.body;
+
+  const totalAmount = amount;
+  const message = `total_amount=${totalAmount},transaction_uuid=${transactionId},product_code=EPAYTEST`;
+
+  const secretKey = "8gBm/:&EnhH.1/q(";
+  const hash = crypto.createHmac("sha256", secretKey).update(message).digest("base64");
+
+  res.json({
+    amount: totalAmount,
+    tax_amount: 0,
+    total_amount: totalAmount,
+    transaction_uuid: transactionId,
+    product_code: "EPAYTEST",
+    product_service_charge: 0,
+    product_delivery_charge: 0,
+    success_url: "http://localhost:5173/payment-success",
+    failure_url: "http://localhost:5173/payment-failure",
+    signed_field_names: "total_amount,transaction_uuid,product_code",
+    signature: hash,
+  });
+});
 app.post("/api/orders", async (req, res) => {
   try {
     const order = new Order(req.body);
