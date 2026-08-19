@@ -33,6 +33,7 @@ const orderSchema = new mongoose.Schema({
   total: Number,
   date: String,
   status: { type: String, default: "Pending" },
+  customerEmail: String,
 });
 const Order = mongoose.model("Order", orderSchema);
 
@@ -130,6 +131,15 @@ app.post("/api/orders", async (req, res) => {
   }
 });
 
+// Get orders for a specific customer
+app.get("/api/orders/customer/:email", async (req, res) => {
+  try {
+    const orders = await Order.find({ customerEmail: req.params.email }).sort({ _id: -1 });
+    res.json(orders);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch customer orders" });
+  }
+});
 // Get all orders (owner only, protected)
 app.get("/api/orders", async (req, res) => {
   try {
