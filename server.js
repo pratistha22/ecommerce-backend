@@ -15,6 +15,15 @@ mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("Connected to MongoDB"))
   .catch((err) => console.error("MongoDB connection error:", err));
 
+  // Customer schema
+const customerSchema = new mongoose.Schema({
+  name: String,
+  email: { type: String, unique: true },
+  password: String,
+  phone: String,
+  address: String,
+});
+const Customer = mongoose.model("Customer", customerSchema);
 // Order schema
 const orderSchema = new mongoose.Schema({
   name: String,
@@ -32,6 +41,48 @@ app.get("/", (req, res) => {
   res.send("Backend is running!");
 });
 
+// Customer signup
+app.post("/api/customers/signup", async (req, res) => {
+  try {
+    const { name, email, password, phone, address } = req.body;
+
+    const existing = await Customer.findOne({ email });
+    if (existing) {
+      return res.status(400).json({ message: "Email already registered" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const customer = new Customer({ name, email, password: hashedPassword, phone, address });
+    await customer.save();
+
+    const token = jwt.sign({ id: customer._id }, process.env.JWT_SECRET, { expiresIn: "30d" });
+    res.status(201).json({ token, customer: { name: customer.name, email: customer.email, phone: customer.phone, address: customer.address } });
+  } catch (err) {
+    res.status(500).json({ message: "Signup failed" });
+  }
+});
+
+// Customer login
+app.post("/api/customers/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    const customer = await Customer.findOne({ email });
+    if (!customer) {
+      return res.status(401).json({ message: "Invalid email or password" });
+    }
+
+    const isMatch = await bcrypt.compare(password, customer.password);
+    if (!isMatch) {
+      return res.status(401).json({ message: "Invalid email or password" });
+    }
+
+    const token = jwt.sign({ id: customer._id }, process.env.JWT_SECRET, { expiresIn: "30d" });
+    res.json({ token, customer: { name: customer.name, email: customer.email, phone: customer.phone, address: customer.address } });
+  } catch (err) {
+    res.status(500).json({ message: "Login failed" });
+  }
+});
 // Owner login route
 app.post("/api/login", (req, res) => {
   const { password } = req.body;
