@@ -49,10 +49,10 @@ app.post("/api/login", (req, res) => {
 app.post("/api/esewa/initiate", (req, res) => {
   const { amount, transactionId } = req.body;
 
-  const totalAmount = Number(amount).toFixed(2);
+  const totalAmount = String(amount);
   const message = `total_amount=${totalAmount},transaction_uuid=${transactionId},product_code=EPAYTEST`;
 
-  const secretKey = "8gBm/:&EnhH.1/q(";
+  const secretKey = "8gBm/:&EnhH.1/q";
   const hash = crypto.createHmac("sha256", secretKey).update(message).digest("base64");
 
     res.json({
