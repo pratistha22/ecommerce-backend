@@ -24,6 +24,18 @@ const customerSchema = new mongoose.Schema({
   address: String,
 });
 const Customer = mongoose.model("Customer", customerSchema);
+
+// Review schema
+const reviewSchema = new mongoose.Schema({
+  productId: Number,
+  customerName: String,
+  customerEmail: String,
+  rating: Number,
+  comment: String,
+  date: { type: Date, default: Date.now },
+});
+const Review = mongoose.model("Review", reviewSchema);
+
 // Order schema
 const orderSchema = new mongoose.Schema({
   name: String,
@@ -138,6 +150,26 @@ app.get("/api/orders/customer/:email", async (req, res) => {
     res.json(orders);
   } catch (err) {
     res.status(500).json({ message: "Failed to fetch customer orders" });
+  }
+});
+// Submit a review
+app.post("/api/reviews", async (req, res) => {
+  try {
+    const review = new Review(req.body);
+    await review.save();
+    res.status(201).json(review);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to submit review" });
+  }
+});
+
+// Get reviews for a specific product
+app.get("/api/reviews/:productId", async (req, res) => {
+  try {
+    const reviews = await Review.find({ productId: req.params.productId }).sort({ date: -1 });
+    res.json(reviews);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch reviews" });
   }
 });
 // Get all orders (owner only, protected)
